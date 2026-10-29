@@ -211,4 +211,37 @@ ok }
     expect(result).toHaveLength(1)
     expect(result[0]!.input).toEqual({ command: 'echo }' })
   })
+
+  // -------------------------------------------------------------------------
+  // Unbalanced quotes in prose
+  //
+  // Quotes only delimit strings inside a JSON object. A single `"` in the
+  // prose around one (an inch mark, a stray quote) must not make the walker
+  // treat the following JSON as string content.
+  // -------------------------------------------------------------------------
+
+  it('extracts tool call after an unbalanced double quote in prose', () => {
+    const text = 'The panel is 12" wide, so run: {"name": "bash", "arguments": {"command": "ls"}}'
+    const result = extractToolCallsFromText(text, TOOLS)
+    expect(result).toHaveLength(1)
+    expect(result[0]!.name).toBe('bash')
+    expect(result[0]!.input).toEqual({ command: 'ls' })
+  })
+
+  it('extracts both tool calls when prose between them has an unbalanced double quote', () => {
+    const text = `{"name": "bash", "arguments": {"command": "a"}}
+Now the 5" one:
+{"name": "bash", "arguments": {"command": "b"}}`
+    const result = extractToolCallsFromText(text, TOOLS)
+    expect(result).toHaveLength(2)
+    expect(result[0]!.input).toEqual({ command: 'a' })
+    expect(result[1]!.input).toEqual({ command: 'b' })
+  })
+
+  it('still honours escaped quotes and braces inside string values after prose quotes', () => {
+    const text = 'Use the 3" bit: {"name": "bash", "arguments": {"command": "echo \\"}\\" {"}}'
+    const result = extractToolCallsFromText(text, TOOLS)
+    expect(result).toHaveLength(1)
+    expect(result[0]!.input).toEqual({ command: 'echo "}" {' })
+  })
 })

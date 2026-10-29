@@ -125,7 +125,10 @@ function extractJSONObjects(text: string): unknown[] {
       continue
     }
 
-    if (ch === '"') {
+    // Only quotes inside a JSON object open or close a string. A `"` in the
+    // prose around one (an inch mark, a stray quote) would otherwise leave
+    // `inString` set and hide every call that follows.
+    if (ch === '"' && depth > 0) {
       inString = !inString
       continue
     }
